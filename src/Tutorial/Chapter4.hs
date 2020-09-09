@@ -2,7 +2,15 @@
 {-@ LIQUID "--no-termination"      @-}
 {-@ LIQUID "--scrape-used-imports" @-}
 
-module Tutorial.Chapter4 where
+module Tutorial.Chapter4 
+   ( safeLookup
+   , unsafeLookup
+   , vectorSum, vectorSum'
+   , absoluteSum, absoluteSum'
+   , dotProduct
+   , sparseProduct, sparseProduct'
+   , head, head', head''
+   ) where
 
 import Prelude      hiding (abs, head, length)
 import Data.List    (foldl')
@@ -102,8 +110,6 @@ absoluteSum vec = go 0 0
 
 --
 
-{-@ loop :: lo:Nat -> hi:{Nat | lo <= hi} -> a -> (i:{Nat | lo <= i && i < hi} -> a -> a) -> a @-} -- Should it be inferred?
--- {-@ loop :: lo:Nat -> hi:{Nat | lo <= hi} -> a -> (Btwn lo hi -> a -> a) -> a @-} -- Doesn't work, should it?
 loop :: Int -> Int -> a -> (Int -> a -> a) -> a
 loop lo hi base f = go base lo
     where
@@ -111,7 +117,6 @@ loop lo hi base f = go base lo
             | i < hi    = go (f i acc) (i + 1)
             | otherwise = acc
 
-{-@ vectorSum' :: Vector Int -> Int @-}
 vectorSum' :: Vector Int -> Int
 vectorSum' vec = loop 0 n 0 body
     where
@@ -121,7 +126,6 @@ vectorSum' vec = loop 0 n 0 body
 -- Exercise 4.7
 
 {-@ absoluteSum' :: Vector Int -> Nat @-}
-absoluteSum' :: Vector Int -> Int
 absoluteSum' vec = loop 0 n 0 body
     where
         body i acc = acc + abs (vec ! i)
@@ -149,7 +153,7 @@ sparseProduct x y = go 0 y
         go n ((i, v):y') = go (n + (x ! i) * v) y'
 
 {-@ fail sparseProduct' @-} -- But it shouldn't fail
---{-@ sparseProduct' :: x:Vector _ -> SparseN _ (vlen x) -> _ @-} -- does not accep the type
+--{-@ sparseProduct' :: x:Vector _ -> SparseN _ (vlen x) -> _ @-} -- does not accept the type
 sparseProduct' x y = foldl' body 0 y
     where
         body sum (i, v) = sum + (x ! i) * v
