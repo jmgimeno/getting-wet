@@ -20,8 +20,11 @@ extra-source-files:
 description:         Please see the README on GitHub at <https://github.com/githubuser/getting-wet#readme>
 
 dependencies:
-- liquid-base
-- liquidhaskell
+  - liquid-base
+  - liquid-vector
+  - liquid-containers
+  - liquid-bytestring
+  - liquidhaskell
 
 library:
   source-dirs: src
