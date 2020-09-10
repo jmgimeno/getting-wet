@@ -5,11 +5,14 @@ module Tutorial.Chapter5
     ( Sparse(..)
     , okSP, badSP, test1, test2
     , fromList
+    , IncList(..)
+    , okList, badList
+    , insertSort, insertSort', mergeSort, quickSort
     ) where
 
 import Data.List (foldl', sort)
 import Data.Maybe (fromJust)
-import Data.Vector hiding (foldl', fromList, (++))
+import Data.Vector hiding (foldl', foldr, fromList, (++))
 
 data Sparse a = SP { spDim   :: Int
                    , spElems :: [(Int, a)] }
@@ -119,5 +122,88 @@ test2 = plus vec1 vec2
 
 -- >>> test2
 -- SP {spDim = 3, spElems = [(0,20),(1,100),(2,9)]}
+--
+
+data IncList a =
+    Emp
+  | (:<) { hd :: a, tl :: IncList a }
+
+infixr 9 :<
+
+{-@ data IncList a =
+        Emp
+      | (:<) { hd :: a, tl :: IncList {v:a | hd <= v}} @-}
+
+{- geneated internal representation
+
+data IncList a where
+    Emp  :: IncList a
+    (:<) :: hd:a -> tl:IncList {v:a | hd <= v} -> Inclist a
+-}
+
+okList  = 1 :< 2 :< 3 :< Emp
+
+{-@ fail badList @-}
+badList = 2 :< 1 :< 3 :< Emp
+
+{-@ insertSort :: (Ord a) => [a] -> IncList a @-}
+insertSort :: (Ord a) => [a] -> IncList a
+insertSort []     = Emp
+insertSort (x:xs) = insert x (insertSort xs)
+
+insert :: (Ord a) => a -> IncList a -> IncList a
+insert y Emp = y :< Emp
+insert y (x :< xs)
+    | y <= x    = y :< x :< xs
+    | otherwise = x :< insert y xs
+
+-- Exercise 5.3
+
+{-@ insertSort' :: (Ord a) => [a] -> IncList a @-}
+insertSort' :: (Ord a) => [a] -> IncList a
+insertSort' = foldr insert Emp
+
+--
+
+split :: [a] -> ([a], [a])
+split (x:y:zs) = (x:xs, y:ys)
+    where
+        (xs, ys) = split zs
+split xs = (xs, [])
+
+{-@ merge :: (Ord a) => IncList a -> IncList a -> IncList a @-}
+merge :: (Ord a) => IncList a -> IncList a -> IncList a
+merge xs Emp = xs
+merge Emp ys = ys
+merge (x :< xs) (y :< ys)
+    | x <= y    = x :< merge xs (y :< ys)
+    | otherwise = y :< merge (x :< xs) ys
+merge _ _ = Emp -- liquid haskell seems to need it !!!
+
+{-@ mergeSort :: (Ord a) => [a] -> IncList a @-}
+mergeSort :: (Ord a) => [a] -> IncList a
+mergeSort [] = Emp
+mergeSort [x] = x :< Emp
+mergeSort xs = merge (mergeSort ys) (mergeSort zs)
+    where (ys, zs) = split xs
+
+-- Exercise 5.4
+
+{-@ quickSort :: (Ord a) => [a] -> IncList a @-}
+quickSort :: (Ord a) => [a] -> IncList a
+quickSort [] = Emp
+quickSort (x:xs) = append x lessers greaters
+    where
+        lessers  = quickSort [y | y <- xs, y < x]
+        greaters = quickSort [z | z <- xs, z >= x]
+
+{-@ append :: (Ord a) 
+           => x:a 
+           -> IncList {v:a | v < x} 
+           -> IncList {v:a | v >= x}
+           -> IncList a @-}
+append z Emp       ys = z :< ys
+append z (x :< xs) ys = x :< append z xs ys
+
 --
 
