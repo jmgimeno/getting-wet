@@ -58,9 +58,7 @@ fromList :: Int -> [(Int, a)] -> Maybe (Sparse a)
 fromList dim elts = 
     if (dim < 0) 
         then Nothing 
-        else case traverse tr elts of
-                Nothing -> Nothing
-                Just elts' -> Just $ SP dim elts'
+        else fmap (SP dim) (traverse tr elts)
                 where
                     tr (i, v) = if (0 <= i) && (i < dim) 
                                     then Just (i, v) 
