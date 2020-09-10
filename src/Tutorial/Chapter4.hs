@@ -41,7 +41,7 @@ assume (!) :: x:Vector a -> {v:Nat | v < vlen x} -> a
 {-@ twoLangs :: VectorN String 2 @-}
 twoLangs = fromList ["haskell", "javascript"]
 
-{-@ type Btwn Lo Hi = {v:Int | Lo <= v && c < Hi} @-}
+{-@ type Btwn Lo Hi = {v:Int | Lo <= v && v < Hi} @-}
 
 -- (!) :: x:Vector a -> Btwn 0 (vlen x) -> a
 
@@ -144,16 +144,15 @@ dotProduct x y = loop 0 sz 0 body
 
 {-@ type SparseN a N = [(Btwn 0 N, a)] @-}
 
-{-@ fail sparseProduct @-} -- But it shouldn't fail
---{-@ sparseProduct :: x:Vector _ -> SparseN _ (vlen x) -> _ @-} -- does not accept the type
+{-@ sparseProduct :: x:Vector _ -> SparseN _ (vlen x) -> _ @-}
 sparseProduct :: Vector Int -> [(Int, Int)] -> Int
 sparseProduct x y = go 0 y
     where
         go n []          = n
         go n ((i, v):y') = go (n + (x ! i) * v) y'
 
-{-@ fail sparseProduct' @-} -- But it shouldn't fail
---{-@ sparseProduct' :: x:Vector _ -> SparseN _ (vlen x) -> _ @-} -- does not accept the type
+{-@ sparseProduct' :: x:Vector _ -> SparseN _ (vlen x) -> _ @-}
+sparseProduct' :: Vector Int -> [(Int, Int)] -> Int
 sparseProduct' x y = foldl' body 0 y
     where
         body sum (i, v) = sum + (x ! i) * v
