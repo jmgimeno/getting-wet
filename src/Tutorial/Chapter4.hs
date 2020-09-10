@@ -77,6 +77,9 @@ safeLookup x i
 
 --
 
+-- >>> vectorSum (fromList [1, -2, 3])
+-- 2
+--
 vectorSum :: Vector Int -> Int
 vectorSum vec = go 0 0
     where
@@ -95,6 +98,9 @@ vectorSum vec = go 0 0
 abs :: Int -> Int
 abs x = if x >= 0 then x else -x
 
+-- >>> absoluteSum' (fromList [1, -2, 3])
+-- 6
+--
 {-@ absoluteSum :: Vector Int -> Nat @-}
 absoluteSum :: Vector Int -> Int
 absoluteSum vec = go 0 0
@@ -125,6 +131,9 @@ vectorSum' vec = loop 0 n 0 body
 
 -- Exercise 4.7
 
+-- >>> absoluteSum' (fromList [1, -2, 3])
+-- 6
+--
 {-@ absoluteSum' :: Vector Int -> Nat @-}
 absoluteSum' vec = loop 0 n 0 body
     where
@@ -133,6 +142,9 @@ absoluteSum' vec = loop 0 n 0 body
 
 -- Exercise 4.8
 
+-- >>> dotProduct (fromList [1, 2, 3]) (fromList [4, 5, 6])
+-- 32
+--
 {-@ dotProduct :: x:Vector Int -> y:{v:Vector Int | vlen x == vlen v} -> Int @-}
 dotProduct :: Vector Int -> Vector Int -> Int
 dotProduct x y = loop 0 sz 0 body
