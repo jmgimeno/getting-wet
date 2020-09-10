@@ -86,14 +86,25 @@ test1 = fromJust $ fromList 3 [(0, "cat"), (2, "mouse")]
 
 {-@ plus :: x:Sparse a -> SparseN a (spDim x) -> SparseN a (spDim x) @-}
 plus :: (Num a) => Sparse a -> Sparse a -> Sparse a
+plus (SP dim xs) (SP _ ys) = SP dim (merge xs ys)
+    where
+        merge [] ys = ys
+        merge (x:xs') ys = merge xs' (insert x ys)
+        insert x [] = [x]
+        insert x@(i, v) ((j, w):ys) 
+            | i == j = (i, v + w) : ys
+            | i /= j = (j, w) : insert x ys
+
+{- supposes ordered spElems
 plus (SP dim x) (SP _ y) = SP dim (merge x y)
-    where -- supposes ordered spElems !!!
+    where 
         merge [] y = y
         merge x [] = x
         merge x@((i, v):x') y@((j, w):y')
             | i < j  = (i, v) : merge x' y
             | i == j = (i, v + w) : merge x' y'
             | i > j  = (j, w) : merge x y'
+-}
 
 {- crude but also works
 plus (SP dim x) (SP _ y) = SP dim (x ++ y)
@@ -109,3 +120,4 @@ test2 = plus vec1 vec2
 -- >>> test2
 -- SP {spDim = 3, spElems = [(0,20),(1,100),(2,9)]}
 --
+
