@@ -8,11 +8,16 @@ module Tutorial.Chapter5
     , IncList(..)
     , okList, badList
     , insertSort, insertSort', mergeSort, quickSort
+    , BST (..)
+    , mem, add, delMin, del, bstSort, toBST, toIncList
     ) where
 
 import Data.List (foldl', sort)
 import Data.Maybe (fromJust)
 import Data.Vector hiding (foldl', foldr, fromList, (++))
+
+{-@ die :: {v:_ | false} -> a @-}
+die msg = error msg
 
 data Sparse a = SP { spDim   :: Int
                    , spElems :: [(Int, a)] }
@@ -146,7 +151,6 @@ okList  = 1 :< 2 :< 3 :< Emp
 {-@ fail badList @-}
 badList = 2 :< 1 :< 3 :< Emp
 
-{-@ insertSort :: (Ord a) => [a] -> IncList a @-}
 insertSort :: (Ord a) => [a] -> IncList a
 insertSort []     = Emp
 insertSort (x:xs) = insert x (insertSort xs)
@@ -159,7 +163,6 @@ insert y (x :< xs)
 
 -- Exercise 5.3
 
-{-@ insertSort' :: (Ord a) => [a] -> IncList a @-}
 insertSort' :: (Ord a) => [a] -> IncList a
 insertSort' = foldr insert Emp
 
@@ -171,7 +174,6 @@ split (x:y:zs) = (x:xs, y:ys)
         (xs, ys) = split zs
 split xs = (xs, [])
 
-{-@ merge :: (Ord a) => IncList a -> IncList a -> IncList a @-}
 merge :: (Ord a) => IncList a -> IncList a -> IncList a
 merge xs Emp = xs
 merge Emp ys = ys
@@ -180,7 +182,6 @@ merge (x :< xs) (y :< ys)
     | otherwise = y :< merge (x :< xs) ys
 merge _ _ = Emp -- liquid haskell seems to need it !!!
 
-{-@ mergeSort :: (Ord a) => [a] -> IncList a @-}
 mergeSort :: (Ord a) => [a] -> IncList a
 mergeSort [] = Emp
 mergeSort [x] = x :< Emp
@@ -189,7 +190,6 @@ mergeSort xs = merge (mergeSort ys) (mergeSort zs)
 
 -- Exercise 5.4
 
-{-@ quickSort :: (Ord a) => [a] -> IncList a @-}
 quickSort :: (Ord a) => [a] -> IncList a
 quickSort [] = Emp
 quickSort (x:xs) = append x lessers greaters
@@ -207,3 +207,108 @@ append z (x :< xs) ys = x :< append z xs ys
 
 --
 
+data BST a = Leaf
+           | Node { root  :: a
+                  , left  :: BST a
+                  , right :: BST a }
+
+okBST :: BST Int
+okBST =  Node 6
+             (Node 2
+                 (Node 1 Leaf Leaf)
+                 (Node 4 Leaf Leaf))
+             (Node 9
+                 (Node 7 Leaf Leaf)
+                 Leaf)
+
+{-@ data BST a    = Leaf
+                  | Node { root  :: a
+                         , left  :: BSTL a root
+                         , right :: BSTR a root } @-}
+
+{-@ type BSTL a X = BST {v:a | v < X}             @-}
+{-@ type BSTR a X = BST {v:a | X < v}             @-}
+
+{- generated internal representation !
+
+data BST a where
+  Leaf :: BST a
+  Node :: r:a 
+       -> BST {v:a | v < r}
+       -> BST {v:a | r < v}
+       -> BST a
+-}
+
+{-@ fail badBST @-}
+badBST =  Node 66
+             (Node 4
+                 (Node 1 Leaf Leaf)
+                 (Node 69 Leaf Leaf))  -- Out of order, rejected
+             (Node 99
+                 (Node 77 Leaf Leaf)
+                 Leaf)
+
+-- Exercise 5.5
+
+-- The BST defined above cannot have duplicates
+
+--
+
+mem :: (Ord a) => a -> BST a -> Bool
+mem _ Leaf = False
+mem k (Node k' l r)
+    | k == k'   = True
+    | k <  k'   = mem k l
+    | otherwise = mem k r
+
+one   :: a -> BST a
+one x = Node x Leaf Leaf
+
+add :: (Ord a) => a -> BST a -> BST a
+add k' Leaf = one k'
+add k' t@(Node k l r)
+    | k' < k    = Node k (add k' l) r
+    | k  < k'   = Node k l (add k' r)
+    | otherwise = t
+
+data MinPair a = MP { mElt :: a, rest :: BST a }
+
+{-@ data MinPair a = MP { mElt :: a, rest :: BSTR a mElt} @-}
+
+{-@ ignore delMin @-}
+
+delMin :: (Ord a) => BST a -> MinPair a
+delMin (Node k Leaf r) = MP k r
+delMin (Node k l r)    = MP k' (Node k l' r)
+    where
+        MP k' l' = delMin l
+delMin Leaf = die "Don't say I didn't warn ya!"
+
+-- Exercise 5.6
+
+del :: (Ord a) => a -> BST a -> BST a
+del k' t@(Node k l r)
+    | k' < k    = Node k (del k' l) r
+    | k  < k'   = Node k l (del k' r)
+    | otherwise = case r of
+                      Leaf -> l
+                      _    -> Node k'' l r'
+                                  where
+                                      MP k'' r' = delMin r
+del _  Leaf = Leaf
+
+-- Exercise 5.7
+
+-- TODO : How to verify the call to die in delMin
+
+-- Exercise 5.8
+
+bstSort :: (Ord a) => [a] -> IncList a
+bstSort = toIncList . toBST
+
+toBST :: (Ord a) => [a] -> BST a
+toBST = foldr add Leaf
+
+toIncList :: BST a -> IncList a
+toIncList (Node x l r) = append x (toIncList l) (toIncList r)
+toIncList Leaf         = Emp
