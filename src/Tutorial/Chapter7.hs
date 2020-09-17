@@ -272,8 +272,12 @@ test6 = dotProduct vx vy
             -> VectorN a {m * n}
   @-}
 flatten :: Int -> Int -> Vector (Vector a) -> Vector a
-flatten = undefined
---flatten n m (V _ xs) = V (m * n) (foldr append [] (map vElts xs))
+flatten n m (V _ xs) = V (m * n) (flatten' n m (map vElts xs))
+
+{-@ flatten' :: n:Nat -> m:Nat -> ListN (ListN a m) n -> ListN a {m * n} @-}
+flatten' :: Int -> Int -> [[a]] -> [a]
+flatten' 0 m _        = []
+flatten' n m (xs:xss) = xs `append` flatten' (n - 1) m xss
 
 --
 
