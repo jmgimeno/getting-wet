@@ -3,14 +3,14 @@
 
 module Tutorial.Chapter7 where
   
-import Prelude  hiding  (map, zipWith, zip, drop, take, fst, snd)
+import Prelude  hiding  (map, zipWith, zip, drop, take, reverse)
 
 {-@ type TRUE = {v:Bool | v} @-}
+
 {-@ die :: {v:_ | false} -> a @-}
 die msg = error msg
 
-
-data Vector a = V { vVim :: Int
+data Vector a = V { vDim :: Int
                   , vElts :: [a]
                   }
 
@@ -97,13 +97,13 @@ reverse xs = go [] xs
 {-@ zipWith :: (a -> b -> c) -> xs:List a
                              -> ListX b xs
                              -> ListX c xs
-@-}
+  @-}
 zipWith f (a:as) (b:bs) = f a b : zipWith f as bs
 zipWith _ [] [] = []
 zipWith _ _  _  = die "no other cases"
 
 {-@ predicate Tinier X Y Z = Min (size X) (size Y) (size Z) @-}
-{-@ predicate Min X Y Z = (if Y < Z then X = Y else X = Z)  @-}
+{-@ predicate Min X Y Z = (if Y < Z then X == Y else X == Z)  @-} -- They use = but I prefer == (it seems 'healthier')
 
 {-@ zip :: as:[a] -> bs:[b] -> {v:[(a,b)] | Tinier v as bs} @-}
 zip (a:as) (b:bs) = (a, b) : zip as bs
@@ -115,19 +115,20 @@ zip _  []         = []
 {-@ zipOrNull :: as:[a] 
               -> bs:[b] 
               -> {v:[(a, b)] | ((size as == 0 || size bs == 0) => size v == 0)
-                                && ((size as /= 0 && size bs /= 0) => Tinier v as bs)} @-}
+                                && ((size as /= 0 && size bs /= 0) => Tinier v as bs)} 
+  @-}
 zipOrNull       :: [a] -> [b] -> [(a, b)]
 zipOrNull [] _  = []
 zipOrNull _ []  = []
 zipOrNull xs ys = zip xs ys
 
-{-@ test1 :: {v: _ | size v = 2} @-}
+{-@ test1 :: {v: _ | size v == 2} @-}
 test1     = zipOrNull [0, 1] [True, False]
 
-{-@ test2 :: {v: _ | size v = 0} @-}
+{-@ test2 :: {v: _ | size v == 0} @-}
 test2     = zipOrNull [] [True, False]
 
-{-@ test3 :: {v: _ | size v = 0} @-}
+{-@ test3 :: {v: _ | size v == 0} @-}
 test3     = zipOrNull ["cat", "dog"] []
 
 {-@ type ListGE a N = {v:List a | N <= size v} @-}
@@ -169,7 +170,7 @@ fst  (x, _) = x
 {-@ measure snd @-}
 snd (_, y) = y
 
-{-@ predicate Sum2 X N = size (fst X) + size (snd X) = N @-}
+{-@ predicate Sum2 X N = size (fst X) + size (snd X) == N @-}
 
 {-@ partition :: _ -> xs:_ -> {v:_ | Sum2 v (size xs)} @-}
 partition :: (a -> Bool) -> [a] -> ([a], [a])
@@ -199,4 +200,90 @@ quickSort (x:xs) = append (quickSort lesser) (x : quickSort greater)
 
 {-@ test10 :: ListN String 2 @-}
 test10 = quickSort (drop 1 ["cat", "dog", "mouse"])
+
+--
+
+{-@ data Vector a = V { vDim :: Nat
+                      , vElts :: ListN a vDim }
+  @-}
+
+--{-@ vDim :: x:_ -> {v:Nat | v == vDim x } @-} 
+
+okVec  = V 2 [10, 20]
+
+{-@ fail badVec @-}
+badVec = V 2 [10, 20, 30]
+
+-- | Non-Empty Vectors
+
+{-@ type VectorNE a = {v:Vector a | vDim v > 0} @-}
+
+-- | Vectors of size N
+
+{-@ type VectorN a N = {v:Vector a | vDim v == N} @-}
+
+-- | Vectors of Size Equal to Another Vector X
+
+{-@ type VectorX a X = VectorN a {vDim X} @-}
+
+{-@ vEmp :: VectorN a 0 @-}
+vEmp = V 0 []
+
+{-@ vCons :: a -> x:Vector a -> VectorN a {vDim x + 1} @-}
+vCons x (V n xs) = V (n + 1) (x : xs)
+
+{-@ vHd :: VectorNE a -> a @-}
+vHd (V _ (x:_)) = x
+vHd _           = die "nope"
+
+{-@ vTl :: x:VectorNE a -> VectorN a {vDim x - 1} @-}
+vTl (V n (_:xs)) = V (n - 1) xs
+vTl _            = die "nope"
+
+{-@ for :: x:Vector a -> (a -> b) -> VectorX b x @-}
+-- for (V n xs) f = V n (map f xs)
+
+{-@ vBin :: (a -> b -> c) 
+         -> x:Vector a
+         -> VectorX b x
+         -> VectorX c x
+  @-}
+vBin op (V n xs) (V _ ys) = V n (zipWith op xs ys)
+
+{-@ dotProduct :: (Num a) => x:Vector a -> VectorX a x -> a @-}
+dotProduct x y = sum $ vElts $ vBin (*) x y
+
+-- Exercise 7.7
+
+{-@ vecFromList :: x:[a] -> VectorN a {size x} @-}
+vecFromList :: [a] -> Vector a
+vecFromList xs = V (size xs) xs
+
+test6 = dotProduct vx vy
+  where
+    vx = vecFromList [1, 2, 3]
+    vy = vecFromList [4, 5, 6]
+
+-- Exercise 7.8
+
+{-@ flatten :: n:Nat
+            -> m:Nat
+            -> VectorN (VectorN a m) n
+            -> VectorN a {m * n}
+  @-}
+flatten :: Int -> Int -> Vector (Vector a) -> Vector a
+flatten = undefined
+--flatten n m (V _ xs) = V (m * n) (foldr append [] (map vElts xs))
+
+--
+
+{-@ product :: xs:Vector _
+            -> ys:Vector _
+            -> VectorN _ {vDim xs * vDim ys}
+  @-}
+product xs ys = flatten (vDim ys) (vDim xs) xys
+  where
+    xys = for ys $ \y ->
+            for xs $ \x ->
+              x * y
 
