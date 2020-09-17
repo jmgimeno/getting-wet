@@ -27,7 +27,7 @@ dotProd vx vy = sum (prod xs ys)
     xs   = vElts vx
     ys   = vElts vy
 
--- {-@ ignore matProd @-}
+{-@ ignore matProd @-}
 -- Wrong definition
 matProd :: (Num a) => Matrix a -> Matrix a -> Matrix a
 matProd (M rx _ xs) (M _ cy ys) = M rx cy elts
@@ -291,3 +291,48 @@ product xs ys = flatten (vDim ys) (vDim xs) xys
             for xs $ \x ->
               x * y
 
+{-@ data Matrix a =
+      M { mRow :: Nat
+        , mCol :: Nat
+        , mElts :: VectorN (VectorN a mCol) mRow
+        }
+  @-}
+
+{-@ type Pos = {v:Int | 0 < v} @-}
+
+{-@ type MatrixN a R C = {v:Matrix a | Dims v R C}    @-}
+{-@ predicate Dims M R C = mRow M == R && mCol M == C @-}
+
+{-@ ok23 :: MatrixN _ 2 3 @-}
+ok23 = M 2 3 (V 2 [ V 3 [1, 2, 3]
+                  , V 3 [4, 5, 6] ])
+
+-- Exercise 7.9
+
+bad1 :: Matrix Int
+bad1 = M 2 3 (V 2 [ V 3 [1, 2, 3]
+                  , V 3 [4, 5, 6] ])
+
+bad2 :: Matrix Int
+bad2 = M 2 2 (V 2 [ V 2 [1, 2]
+                  , V 2 [4, 5] ])
+
+-- Exercise 7.9
+
+{-@ measure cols @-}
+{-@ cols :: [[a]] -> Nat @-}
+cols :: [[a]] -> Int
+cols []    = 0
+cols (x:_) = size x
+
+{-@ matFromList :: xs:[[a]] -> Maybe (MatrixN a (size xs) (cols xs)) @-}
+matFromList :: [[a]] -> Maybe (Matrix a)
+matFromList [] = Nothing
+matFromList xss@(xs:_)
+  | ok        = Just (M r c vs)
+  | otherwise = Nothing
+  where
+    r  = size xss
+    c  = size xs
+    ok = all ((== c) . size) xss
+    vs = undefined -- V r $ (map (V c) xss)
