@@ -324,26 +324,31 @@ bad2 = M 2 2 (V 2 [ V 2 [1, 2]
 {-@ measure cols @-}
 {-@ cols :: [[a]] -> Nat @-}
 cols :: [[a]] -> Int
-cols []    = 0
+cols []     = 0
 cols (xs:_) = size xs
 
-{-@ ignore matFromList @-}
+{-@ checkRowsLength :: n:Nat -> xs:[[a]] -> Maybe (ListX (ListN a n) xs) @-}
+checkRowsLength :: Int -> [[a]] -> Maybe [[a]]
+checkRowsLength n [] = Just []
+checkRowsLength n (xs:xss)
+  | n == size xs = (:) <$> pure xs <*> checkRowsLength n xss
+  | otherwise    = Nothing
+
 {-@ matFromList :: xs:[[a]] -> Maybe (MatrixN a (size xs) (cols xs)) @-}
 matFromList :: [[a]] -> Maybe (Matrix a)
 matFromList [] = Nothing
-matFromList xss@(xs:_)
-  | ok        = Just (M r c vs)
-  | otherwise = Nothing
-  where
-    r  = size xss
-    c  = size xs
-    ok = all ((== c) . size) xss
-    vs = V r (map (V c) xss)
+matFromList xss@(xs:_) = case checkRowsLength (size xs) xss of
+  Nothing   -> Nothing
+  Just xss' -> Just (M r c vs)
+                  where
+                    r  = size xss
+                    c  = size xs
+                    vs = vecFromList (map vecFromList xss')
 
 -- Exercise 7.11
 
-{-@ ignore mat23 @-}
 {-@ mat23 :: Maybe (MatrixN Integer 2 2) @-}
+mat23 :: Maybe (Matrix Integer)
 mat23 = matFromList [ [1, 2]
                     , [3, 4] ]
 
