@@ -13,11 +13,13 @@ die msg = error msg
 data Vector a = V { vDim :: Int
                   , vElts :: [a]
                   }
+  deriving Show
 
 data Matrix a = M { mRow :: Int
                   , mCol :: Int
                   , mElts :: Vector (Vector a)
                   }
+  deriving Show
 
 {-@ ignore dotProd @-}
 dotProd :: (Num a) => Vector a -> Vector a -> a
@@ -317,14 +319,15 @@ bad2 :: Matrix Int
 bad2 = M 2 2 (V 2 [ V 2 [1, 2]
                   , V 2 [4, 5] ])
 
--- Exercise 7.9
+-- Exercise 7.10
 
 {-@ measure cols @-}
 {-@ cols :: [[a]] -> Nat @-}
 cols :: [[a]] -> Int
 cols []    = 0
-cols (x:_) = size x
+cols (xs:_) = size xs
 
+{-@ ignore matFromList @-}
 {-@ matFromList :: xs:[[a]] -> Maybe (MatrixN a (size xs) (cols xs)) @-}
 matFromList :: [[a]] -> Maybe (Matrix a)
 matFromList [] = Nothing
@@ -335,4 +338,51 @@ matFromList xss@(xs:_)
     r  = size xss
     c  = size xs
     ok = all ((== c) . size) xss
-    vs = undefined -- V r $ (map (V c) xss)
+    vs = V r (map (V c) xss)
+
+-- Exercise 7.11
+
+{-@ ignore mat23 @-}
+{-@ mat23 :: Maybe (MatrixN Integer 2 2) @-}
+mat23 = matFromList [ [1, 2]
+                    , [3, 4] ]
+
+--
+
+{-@ ignore matProduct @-}
+{-@ matProduct :: (Num a) => x:Matrix a
+                          -> y:{Matrix a | mCol x == mRow y}
+                          -> MatrixN a (mRow x) (mCol y)
+  @-}
+matProduct :: (Num a) => Matrix a -> Matrix a -> Matrix a
+matProduct (M rx _ xs) my@(M _ cy _) = M rx cy elts
+  where
+    elts = for xs (\xi ->
+             for ys' (\yj ->
+               dotProduct xi yj
+             )
+           )
+    M _ _ ys' = transpose my
+
+-- >>> ok32 == transpose ok23
+--
+ok32 = M 3 2 (V 3 [ V 2 [1, 4]
+                  , V 2 [2, 5]
+                  , V 2 [3, 6] ])
+
+-- Exercise 7.12
+
+{-@ ignore transpose @-}
+{-@ transpose :: m:Matrix a -> MatrixN a (mCol m) (mRow m) @-}
+transpose :: Matrix a -> Matrix a
+transpose = undefined
+
+{-@ ignore txgo @-}
+{-@ txgo :: c:Nat -> r:Nat
+         -> VectorN (VectorN a c) r
+         -> VectorN (VectorN a r) c
+  @-}
+txgo :: Int -> Int -> Vector (Vector a) -> Vector (Vector a)
+txgo c r rows = undefined
+
+
