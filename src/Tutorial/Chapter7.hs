@@ -377,17 +377,26 @@ ok32 = M 3 2 (V 3 [ V 2 [1, 4]
 
 -- Exercise 7.12
 
-{-@ ignore transpose @-}
 {-@ transpose :: m:Matrix a -> MatrixN a (mCol m) (mRow m) @-}
 transpose :: Matrix a -> Matrix a
-transpose = undefined
+transpose (M r c elts) = M c r (txgo c r elts)
 
-{-@ ignore txgo @-}
 {-@ txgo :: c:Nat -> r:Nat
          -> VectorN (VectorN a c) r
          -> VectorN (VectorN a r) c
   @-}
 txgo :: Int -> Int -> Vector (Vector a) -> Vector (Vector a)
-txgo c r rows = undefined
+txgo c r (V _ elts) = V c $ map (V r) (txgo' c r (map vElts elts))
 
+{-@ txgo' :: c:Nat -> r:Nat
+          -> ListN (ListN a c) r
+          -> ListN (ListN a r) c
+  @-}
+txgo' :: Int -> Int -> [[a]] -> [[a]]
+txgo' = undefined
 
+{-@ type ListNE a = {l:List a | size l > 0} @-}
+
+{-@ tail :: l:ListNE a -> ListN a {size l - 1} @-}
+tail :: [a] -> [a]
+tail (_:xs) = xs
