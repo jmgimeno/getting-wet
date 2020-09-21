@@ -3,7 +3,7 @@
 
 module Tutorial.Chapter7 where
   
-import Prelude  hiding  (map, zipWith, zip, drop, take, reverse)
+import Prelude  hiding  (map, zipWith, zip, drop, take, reverse, tail, head)
 
 {-@ type TRUE = {v:Bool | v} @-}
 
@@ -393,10 +393,16 @@ txgo c r (V _ elts) = V c $ map (V r) (txgo' c r (map vElts elts))
           -> ListN (ListN a r) c
   @-}
 txgo' :: Int -> Int -> [[a]] -> [[a]]
-txgo' = undefined
+txgo' 0 r rows = []
+txgo' c r rows = map head rows : txgo' (c - 1) r (map tail rows)
 
 {-@ type ListNE a = {l:List a | size l > 0} @-}
+
+{-@ head :: l:ListNE a -> a @-}
+head :: [a] -> a
+head (x:_) = x
 
 {-@ tail :: l:ListNE a -> ListN a {size l - 1} @-}
 tail :: [a] -> [a]
 tail (_:xs) = xs
+
