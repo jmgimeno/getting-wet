@@ -1,7 +1,7 @@
 {-@ LIQUID "--short-names"    @-}
 {-@ LIQUID "--no-termination" @-}
 
-module Tutorial.Chapter5 
+module Book.Chapter5 
     ( Sparse(..)
     , okSP, badSP, test1, test2
     , fromList

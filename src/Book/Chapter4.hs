@@ -2,7 +2,7 @@
 {-@ LIQUID "--no-termination"      @-}
 {-@ LIQUID "--scrape-used-imports" @-}
 
-module Tutorial.Chapter4 
+module Book.Chapter4 
    ( safeLookup
    , unsafeLookup
    , vectorSum, vectorSum'

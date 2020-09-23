@@ -1,7 +1,7 @@
 {-@ LIQUID "--no-termination" @-}
 {-@ LIQUID "--short-names"    @-}
 
-module Tutorial.Chapter6 where
+module Book.Chapter6 where
 
 import Prelude hiding(head, tail, null, foldl1, foldl, sum)
 

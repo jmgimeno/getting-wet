@@ -1,7 +1,7 @@
 {-@ LIQUID "--short-names"    @-}
 {-@ LIQUID "--no-termination" @-}
 
-module Tutorial.Chapter7 where
+module Book.Chapter7 where
   
 import Prelude  hiding  (map, zipWith, zip, drop, take, reverse, tail, head)
 
