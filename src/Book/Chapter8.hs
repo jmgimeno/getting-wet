@@ -214,13 +214,13 @@ test4 = filter' (> 3) [3, 1, 2, 3]
 
 -- Exercise 8.9
 
-{-@ type UListDisjointX a X = {v:UList a | intersection (elts v) (elts X) == empty } @-}
+{-@ predicate Disjoint X Y = Set_emp (Set_cap (elts X) (elts Y)) @-}
 
 {-@ reverse :: xs:UList a -> UList a @-}
 reverse :: [a] -> [a]
 reverse = go []
    where
-    {-@ go :: acc:UList a -> UListDisjointX a acc -> UList a @-}
+    {-@ go :: acc:UList a -> {xs:UList a | Disjoint acc xs} -> UList a @-}
     go acc [] = acc
     go acc (x:xs) = go (x:acc) xs
 
@@ -250,7 +250,7 @@ isin _ [] = False
 -- with duplicates
 
 {-@ ignore append @-}
-{-@ append :: xs:UList a -> UList a -> UList a @-}
+{-@ append :: xs:UList a -> {ys:UList a | Disjoint xs ys} -> UList a @-}
 append [] ys     = ys
 append (x:xs) ys = x : append xs ys
 
