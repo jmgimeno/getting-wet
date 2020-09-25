@@ -249,11 +249,11 @@ isin _ [] = False
 -- Because they can share common elements making the result of appending a list
 -- with duplicates
 
-{-@ predicate Union X Y Z = Set_cup X Y == Z @-}
+{-@ predicate Union X Y Z = Set_cup (elts X) (elts Y) == (elts Z) @-}
 
 {-@ append :: xs:UList a 
            -> {ys:UList a | Disjoint xs ys} 
-           -> {zs:UList a | Union (elts xs) (elts ys) (elts zs) } @-}
+           -> {zs:UList a | Union xs ys zs } @-}
 append [] ys     = ys
 append (x:xs) ys = x : append xs ys
 
