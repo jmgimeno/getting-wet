@@ -3,7 +3,7 @@
 
 module Book.Chapter8 where
 
-import Data.Set hiding (insert, partition, filter, split, elems)
+import Data.Set hiding (insert, partition, filter, split, elems, disjoint)
 import Prelude  hiding (elem, reverse, filter)
 
 {-@ die :: {v:_ | false} -> a @-}
@@ -220,8 +220,49 @@ test4 = filter' (> 3) [3, 1, 2, 3]
 reverse :: [a] -> [a]
 reverse = go []
    where
-    {-@ go :: acc:UList a -> xs:UListDisjointX a acc -> UList a @-}
+    {-@ go :: acc:UList a -> UListDisjointX a acc -> UList a @-}
     go acc [] = acc
     go acc (x:xs) = go (x:acc) xs
+
+--
+
+{-@ nub :: [a] -> UList a @-}
+nub xs = go [] xs
+  where
+    {-@ go :: UList a -> xs:[a] -> UList a / [len xs] @-}
+    go seen [] = seen
+    go seen (x:xs)
+      | x `isin` seen = go seen xs
+      | otherwise     = go (x : seen) xs
+
+-- FIXME ??? (it seems to work w/o fixing anything)
+{-@ predicate In X Xs = Set_mem X (elts Xs) @-}
+
+{-@ isin :: x:_ -> ys:_ -> {v:Bool | v <=> In x ys} @-}
+isin x (y:ys)
+  | x == y    = True
+  | otherwise = x `isin` ys
+isin _ [] = False
+
+-- Exercise 8.10
+
+-- Because they can share common elements making the result of appending a list
+-- with duplicates
+
+{-@ ignore append @-}
+{-@ append :: xs:UList a -> UList a -> UList a @-}
+append [] ys     = ys
+append (x:xs) ys = x : append xs ys
+
+-- Exercise 8.11
+
+{-@ type Btwn I J = {v:_ | I <= v && v < J} @-}
+
+{-@ ignore range @-}
+{-@ range :: i:Int -> j:Int -> UList (Btwn i j) @-}
+range :: Int -> Int -> [Int]
+range i j
+  | i < j     = i : range (i + 1) j
+  | otherwise = []
 
 --
