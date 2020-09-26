@@ -9,6 +9,16 @@ import Prelude  hiding (elem, reverse, filter)
 {-@ die :: {v:_ | false} -> a @-}
 die msg = error msg
 
+{-@ predicate In X Xs      = Set_mem X Xs            @-}
+{-@ predicate Subset X Y   = Set_sub X Y             @-}
+{-@ predicate Empty  X     = Set_emp X               @-}
+{-@ predicate Inter X Y Z  = X = Set_cap Y Z         @-}
+{-@ predicate Union X Y Z  = X = Set_cup Y Z         @-}
+{-@ predicate Union1 X Y Z = Union X (Set_sng Y) Z   @-}
+{-@ predicate Disjoint X Y = Inter (Set_empty 0) X Y @-}
+
+type List a = [a]
+
 {-@ type True  = {v:Bool |     v} @-}
 {-@ type False = {v:Bool | not v} @-}
 
@@ -214,13 +224,11 @@ test4 = filter' (> 3) [3, 1, 2, 3]
 
 -- Exercise 8.9
 
-{-@ predicate Disjoint X Y = Set_emp (Set_cap (elts X) (elts Y)) @-}
-
 {-@ reverse :: xs:UList a -> UList a @-}
 reverse :: [a] -> [a]
 reverse = go []
    where
-    {-@ go :: acc:UList a -> {xs:UList a | Disjoint acc xs} -> UList a @-}
+    {-@ go :: acc:UList a -> {xs:UList a | Disjoint (elts acc) (elts xs)} -> UList a @-}
     go acc [] = acc
     go acc (x:xs) = go (x:acc) xs
 
@@ -238,7 +246,7 @@ nub xs = go [] xs
 -- FIXME ??? (it seems to work w/o fixing anything)
 {-@ predicate In X Xs = Set_mem X (elts Xs) @-}
 
-{-@ isin :: x:_ -> ys:_ -> {v:Bool | v <=> In x ys} @-}
+{-@ isin :: x:_ -> ys:_ -> {v:Bool | v <=> In x ys } @-}
 isin x (y:ys)
   | x == y    = True
   | otherwise = x `isin` ys
@@ -249,19 +257,15 @@ isin _ [] = False
 -- Because they can share common elements making the result of appending a list
 -- with duplicates
 
-{-@ predicate Union X Y Z = Set_cup (elts X) (elts Y) == (elts Z) @-}
-
 {-@ append :: xs:UList a 
-           -> {ys:UList a | Disjoint xs ys} 
-           -> {zs:UList a | Union xs ys zs } @-}
+           -> {ys:UList a | Disjoint (elts xs) (elts ys)} 
+           -> {zs:UList a | Union (elts zs) (elts xs) (elts ys) } @-}
 append [] ys     = ys
 append (x:xs) ys = x : append xs ys
 
 -- Exercise 8.11
 
 {-@ type Btwn I J = {v:_ | I <= v && v < J} @-}
-
-{-@ predicate AddOne X XS YS = Set_cup (Set_sng X) (elts XS) == (elts YS) @-}
 
 {-@ ignore range @-}
 {-@ range :: i:Int -> j:Int -> UList (Btwn i j) @-}
@@ -272,6 +276,7 @@ range i j
   where
     {-@ add :: x:_
             -> {xs:UList _ | not (In x xs)}
-            -> {ys:UList _ | AddOne x xs ys} @-}
+            -> {ys:UList _ | Union1 (elts ys) x (elts xs)} @-}
     add x xs = x : xs 
+    
 --
