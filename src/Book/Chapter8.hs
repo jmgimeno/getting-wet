@@ -261,11 +261,17 @@ append (x:xs) ys = x : append xs ys
 
 {-@ type Btwn I J = {v:_ | I <= v && v < J} @-}
 
+{-@ predicate AddOne X XS YS = Set_cup (Set_sng X) (elts XS) == (elts YS) @-}
+
 {-@ ignore range @-}
 {-@ range :: i:Int -> j:Int -> UList (Btwn i j) @-}
 range :: Int -> Int -> [Int]
 range i j
-  | i < j     = i : range (i + 1) j
+  | i < j     = add i (range (i + 1) j)
   | otherwise = []
-
+  where
+    {-@ add :: x:_
+            -> {xs:UList _ | not (In x xs)}
+            -> {ys:UList _ | AddOne x xs ys} @-}
+    add x xs = x : xs 
 --
