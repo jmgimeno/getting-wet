@@ -1,7 +1,7 @@
 {-@ LIQUID "--short-names"    @-}
 {-@ LIQUID "--no-termination" @-}
 
-module Book.Chapter3 where
+module Book.C03_Basic where
 
 import Prelude hiding (abs)
 

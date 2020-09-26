@@ -1,7 +1,7 @@
 {-@ LIQUID "--short-names"    @-}
 {-@ LIQUID "--no-termination" @-}
 
-module Book.Chapter7 where
+module Book.C07_Measure_Int where
   
 import Prelude  hiding  (map, zipWith, zip, drop, take, reverse, tail, head)
 

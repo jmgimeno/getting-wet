@@ -1,7 +1,7 @@
 {-@ LIQUID "--no-termination" @-}
 {-@ LIQUID "--short-names"    @-}
 
-module Book.Chapter6 where
+module Book.C06_Measure_Bool where
 
 import Prelude hiding(head, tail, null, foldl1, foldl, sum)
 

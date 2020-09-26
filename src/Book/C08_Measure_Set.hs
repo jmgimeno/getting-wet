@@ -1,7 +1,7 @@
 {-@ LIQUID "--short-names"    @-}
 {-@ LIQUID "--no-termination" @-}
 
-module Book.Chapter8 where
+module Book.C08_Measure_Set where
 
 import Data.Set hiding (insert, partition, filter, split, elems, disjoint)
 import Prelude  hiding (elem, reverse, filter)

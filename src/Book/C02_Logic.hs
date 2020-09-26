@@ -1,6 +1,6 @@
 {-@ LIQUID "--reflection" @-} -- To enable theorem proving
 
-module Book.Chapter2 where
+module Book.C02_Logic where
 
 {-@ (==>) :: p:Bool -> q:Bool -> {v:Bool | v <=> (p ==> q)} @-}
 (==>) :: Bool -> Bool -> Bool

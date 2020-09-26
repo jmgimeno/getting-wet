@@ -1,7 +1,7 @@
 {-@ LIQUID "--short-names"    @-}
 {-@ LIQUID "--no-termination" @-}
 
-module Book.Chapter5 
+module Book.C05_Datatypes 
     ( Sparse(..)
     , okSP, badSP, test1, test2
     , fromList

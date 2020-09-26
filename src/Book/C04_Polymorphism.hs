@@ -2,7 +2,7 @@
 {-@ LIQUID "--no-termination"      @-}
 {-@ LIQUID "--scrape-used-imports" @-}
 
-module Book.Chapter4 
+module Book.C04_Polymorphism 
    ( safeLookup
    , unsafeLookup
    , vectorSum, vectorSum'
