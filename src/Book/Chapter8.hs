@@ -224,11 +224,14 @@ test4 = filter' (> 3) [3, 1, 2, 3]
 
 -- Exercise 8.9
 
-{-@ reverse :: xs:UList a -> UList a @-}
+{-@ reverse :: xs:UList a 
+            -> {ys:UList a | (elts xs) == (elts ys)} @-}
 reverse :: [a] -> [a]
 reverse = go []
    where
-    {-@ go :: acc:UList a -> {xs:UList a | Disjoint (elts acc) (elts xs)} -> UList a @-}
+    {-@ go :: acc:UList a 
+           -> {xs:UList a | Disjoint (elts acc) (elts xs)} 
+           -> {ys:UList a | Union (elts ys) (elts acc) (elts xs)} @-}
     go acc [] = acc
     go acc (x:xs) = go (x:acc) xs
 
@@ -280,3 +283,50 @@ range i j
     add x xs = x : xs 
     
 --
+
+data Zipper a = Zipper {
+    focus :: a
+  , left  :: [a]
+  , right :: [a] 
+}
+
+{-@ data Zipper a = Zipper {
+      focus :: a
+    , left  :: {v:UList a | not (In focus v)}
+    , right :: {v:UList a | not (In focus v) && Disj v left}
+    } @-}
+
+{-@ predicate Disj X Y = Disjoint (elts X) (elts Y) @-}
+
+{-@ differentiate :: UList a -> Maybe (Zipper a) @-}
+differentiate []     = Nothing
+differentiate (x:xs) = Just $ Zipper x [] xs
+
+-- Exercise 8.12
+
+-- NOTE: Strengthen types of reverse and append
+
+{-@ integrate :: Zipper a -> UList a @-}
+integrate (Zipper x l r) = reverse l `append` (x : r)
+
+--
+
+focusLeft :: Zipper a -> Zipper a
+focusLeft (Zipper t (l:ls) rs) = Zipper l ls (t:rs)
+focusLeft (Zipper t [] rs)     = Zipper x xs []
+  where
+    (x:xs) = reverse (t:rs)
+
+focusRight :: Zipper a -> Zipper a
+focusRight = reverseZipper . focusLeft . reverseZipper
+
+reverseZipper :: Zipper a -> Zipper a
+reverseZipper (Zipper t ls rs) = Zipper t rs ls
+
+filterZipper :: (a -> Bool) -> Zipper a -> Maybe (Zipper a)
+filterZipper p (Zipper f ls rs)
+  = case filter p (f:rs) of
+      f':rs' -> Just $ Zipper f' (filter p ls) rs'
+      []     -> case filter p ls of
+                  f':ls' -> Just $ Zipper f' ls' []
+                  []     -> Nothing
