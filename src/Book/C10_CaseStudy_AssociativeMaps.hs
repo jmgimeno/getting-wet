@@ -180,8 +180,7 @@ mem _ Tip     = False
 
 {-@ fresh :: xs:[Int] -> {v:Int | not (Elem v xs)} @-}
 fresh :: [Int] -> Int
-fresh []     = 42
-fresh (x:xs) = undefined
+fresh = undefined
 
 {-@ predicate Elem X Ys = In X (elems Ys) @-}
 {-@ measure elems @-}
