@@ -3,7 +3,8 @@
 
 module Book.C10_CaseStudy_AssociativeMaps where
 
-import Data.Set hiding (elems)
+import Data.Set hiding (elems, partition)
+import Data.List (partition)
 
 {-@ die :: {v:_ | false} -> a @-}
 die x = error x
@@ -178,10 +179,25 @@ mem _ Tip     = False
 
 -- Exercise 10.6
 
+{-@ ignore fresh @-}
 {-@ fresh :: xs:[Int] -> {v:Int | not (Elem v xs)} @-}
 fresh :: [Int] -> Int
-fresh []     = 42
-fresh (x:xs) = undefined
+fresh xs = minfrom 0 (length xs, xs)
+
+{-@ ignore minfrom @-}
+{-@ minfrom :: a:Int 
+            -> {p:(Nat, [Int]) | len (snd p) == fst p} 
+            -> {v:Int | not (Elem v (snd p))} 
+  @-}
+minfrom :: Int -> (Int, [Int]) -> Int
+minfrom a (n, xs)
+  | n == 0     = a
+  | m == b - a = minfrom b (n - m, vs)
+  | otherwise  = minfrom a (m, us)
+  where
+    (us, vs) = partition (< b) xs
+    b        = a + 1 + n `div` 2
+    m        = length us
 
 {-@ predicate Elem X Ys = In X (elems Ys) @-}
 {-@ measure elems @-}
