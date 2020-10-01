@@ -6,6 +6,16 @@ module Book.C12_CaseStudy_AVL where
 import qualified Data.Set as S
 import Prelude hiding (max)
 
+--
+
+{-@ invariant {v:AVL a | 0 <= realHeight v && realHeight v = getHeight v} @-}
+
+{-@ inv_proof  :: t:AVL a -> {v:_ | 0 <= realHeight t && realHeight t = getHeight t } @-}
+inv_proof Leaf           = True
+inv_proof (Node k l r n) = inv_proof l && inv_proof r
+
+--
+
 -- Georgy Adelson-Velski
 -- Evgenii Landis
 
@@ -83,7 +93,90 @@ mkNode v l r = Node v l r h
    hl      = getHeight l
    hr      = getHeight r
 
+--
+
+{-@ ignore insert0 @-}
+{-@ insert0 :: (Ord a) => a -> AVL a -> AVL a @-}
+insert0 y t@(Node x l r _)
+  | y < x    = mkNode x (insert0 y l) r
+  | x < y    = mkNode x l (insert0 y r)
+  | otherwise = t
+insert0 y Leaf = singleton y
+
+{-@ inline leftBig @-}
+leftBig l r = diff l r == 2
+
+{-@ inline rightBig @-}
+rightBig l r = diff r l == 2
+
+{-@ inline diff @-}
+diff s t = getHeight s - getHeight t
+
 {-@ measure getHeight @-}
-{-@ getHeight :: t:AVL a -> {v:Nat | v == realHeight t} @-}
 getHeight Leaf           = 0
 getHeight (Node _ _ _ n) = n
+
+{-@ measure balFac @-}
+balFac Leaf           = 0
+balFac (Node _ l r _) = getHeight l - getHeight r
+
+{-@ inline leftHeavy @-}
+leftHeavy t = balFac t > 0
+
+{-@ inline rightHeavy @-}
+rightHeavy t = balFac t < 0
+
+{-@ inline noHeavy @-}
+noHeavy t = balFac t == 0
+
+{-@ balL0 :: x:a
+          -> l:{AVLL a x | noHeavy l}
+          -> r:{AVLR a x | leftBig l r}
+          -> AVLN a {realHeight l + 1}
+  @-}
+balL0 v (Node lv ll lr _) r = mkNode lv ll (mkNode v lr r)
+
+{-@ balLL :: x:a
+          -> l:{AVLL a x | leftHeavy l}
+          -> r:{AVLR a x | leftBig l r}
+          -> AVLT a l
+  @-}
+balLL v (Node lv ll lr _) r = mkNode lv ll (mkNode v lr r)
+
+{-@ balLR :: x:a
+          -> l:{AVLL a x | rightHeavy l}
+          -> r:{AVLR a x | leftBig l r}
+          -> AVLT a l
+  @-}
+balLR v (Node lv ll (Node lrv lrl lrr _) _) r 
+  = mkNode lrv (mkNode lv ll lrl) (mkNode v lrr r)
+
+-- Exercise 12.4
+
+{-@ balR0 :: x:a
+          -> l: AVLL a x
+          -> r: {AVLR a x | rightBig l r && noHeavy r}
+          -> AVLN a {realHeight r + 1}
+  @-}
+balR0 v l (Node rv rl rr _) = mkNode rv (mkNode v l rl) rr
+
+-- Exercise 12.5
+
+{-@ balRR :: x:a
+          -> l: AVLL a x
+          -> r:{AVLR a x | rightBig l r && rightHeavy r}
+          -> AVLT a r
+  @-}
+balRR v l (Node rv rl rr _) = mkNode rv (mkNode v l rl) rr
+
+-- Exercise 12.6
+
+{-@ balRL :: x:a
+          -> l: AVLL a x
+          -> r:{AVLR a x | rightBig l r && leftHeavy r}
+          -> AVLT a r
+  @-}
+balRL v l (Node rv (Node rlv rll rlr _ ) rr _) 
+  = mkNode rlv (mkNode v l rll) (mkNode rv rlr rr)
+
+--
