@@ -270,18 +270,29 @@ append (x:xs) ys = x : append xs ys
 
 {-@ type Btwn I J = {v:_ | I <= v && v < J} @-}
 
-{-@ ignore range @-}
 {-@ range :: i:Int -> j:Int -> UList (Btwn i j) @-}
 range :: Int -> Int -> [Int]
 range i j
-  | i < j     = add i (range (i + 1) j)
+  | i < j     = assert (lemma_range i j r) $ add i r
   | otherwise = []
   where
+    r = range (i + 1) j
     {-@ add :: x:_
             -> {xs:UList _ | not (In x xs)}
             -> {ys:UList _ | Union1 (elts ys) x (elts xs)} @-}
     add x xs = x : xs 
-    
+
+{-@ lemma_range :: i:Int 
+                -> j:{Int | i < j} 
+                -> l:UList (Btwn {i + 1} j)
+                -> {v:Bool | not (In i l)}
+  @-}
+lemma_range :: Int -> Int -> [Int] -> Bool
+lemma_range i j [] = True
+lemma_range i j (x:xs) = lemma_range i j xs
+
+assert _ x = x
+
 --
 
 data Zipper a = Zipper {
