@@ -307,3 +307,42 @@ data PairET a = P {
     elem :: a
   , tree :: AVL a
 }
+
+--
+
+{-@ measure elems @-}
+elems :: (Ord a) => AVL a -> S.Set a
+elems (Node x l r _) = S.singleton x `S.union`
+                       elems l       `S.union`
+                       elems r
+elems Leaf           = S.empty
+
+-- Exercise 12.7
+
+{-@ type BoolP P = {v:Bool | v <=> P} @-}
+
+{-@ member :: (Ord a) => x:a -> t:AVL a -> {v:Bool | v <=> hasElem x t} @-}
+member :: (Ord a ) => a -> AVL a -> Bool
+member y (Node x l r _)
+  | y < x     = assert (lemma_nonMemR y r) $ member y l
+  | x < y     = assert (lemma_nonMemL y l) $ member y r
+  | otherwise = True
+member _ Leaf = False
+
+{-@ inline hasElem @-}
+hasElem x t = S.member x (elems t)
+
+{-@ lemma_nonMemL :: x:a -> t:AVLL a x -> {v:Bool | not (hasElem x t)} @-}
+lemma_nonMemL :: a -> AVL a -> Bool
+lemma_nonMemL x Leaf = True
+lemma_nonMemL x (Node _ l r _) = lemma_nonMemL x l && lemma_nonMemL x r 
+
+{-@ lemma_nonMemR :: x:a -> t:AVLR a x -> {v:Bool | not (hasElem x t)} @-}
+lemma_nonMemR :: a -> AVL a -> Bool
+lemma_nonMemR x Leaf = True
+lemma_nonMemR x (Node _ l r _) = lemma_nonMemR x l && lemma_nonMemR x r 
+
+assert _ x = x
+
+--
+
