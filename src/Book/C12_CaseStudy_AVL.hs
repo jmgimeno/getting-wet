@@ -266,7 +266,6 @@ insert' a Leaf = singleton a
 
 --
 
-{-@ ignore delete @-}
 {-@ delete :: a -> s:AVL a -> {t:AVL a | eqOrDn s t} @-}
 delete y (Node x l r _)
   | y < x     = bal x (delete y l) r
@@ -277,7 +276,6 @@ delete _ Leaf = Leaf
 {-@ inline eqOrDn @-}
 eqOrDn s t = eqOrUp t s
 
-{-@ ignore merge @-}
 {-@ merge :: x:a 
           -> l:AVLL a x 
           -> r:{AVLR a x | isBal l r 1} 
@@ -288,11 +286,24 @@ merge _ Leaf r = r
 merge _ l Leaf = l
 merge x l r = bal y l r'
   where
-    (y, r') = getMin r
+    P y r' = getMin r
 
-{-@ ignore getMin @-}
---{-@ getMin :: s:{AVL a | realHeight s > 0} -> (x:a, {t:AVLR a | eqOrDn s t}) @-}
-getMin (Node x Leaf r _) = (x, r)
-getMin (Node x l    r _) = (x', bal x l' r)
+-- I'd would want to express:
+
+-- {-@ getMin :: s:{AVL a | realHeight s > 0} -> (x:a, {t:AVLR a | eqOrDn s t}) @-}
+
+{-@ getMin :: s:{AVL a | realHeight s > 0} -> p:{PairET a | eqOrDn s (tree p)} @-}
+getMin (Node x Leaf r _) = P x r
+getMin (Node x l    r _) = P x' (bal x l' r)
   where
-    (x', l') = getMin l
+    P x' l' = getMin l
+
+{-@ data PairET a = P {
+        elem :: a
+      , tree :: AVLR a elem
+      }
+  @-}
+data PairET a = P {
+    elem :: a
+  , tree :: AVL a
+}
