@@ -293,6 +293,18 @@ lemma_range i j (x:xs) = lemma_range i j xs
 
 assert _ x = x
 
+-- or even we can refine () to express the lemma:
+-- { not (In i l) } is the sama as { v : () | not (In i l) }
+
+{-@ lemma_range' :: i:Int 
+                 -> j:{Int | i < j} 
+                 -> l:UList (Btwn {i + 1} j)
+                 -> { not (In i l) }
+  @-}
+lemma_range' :: Int -> Int -> [Int] -> ()
+lemma_range' i j [] = ()
+lemma_range' i j (x : xs) = lemma_range' i j xs
+
 --
 
 data Zipper a = Zipper {
