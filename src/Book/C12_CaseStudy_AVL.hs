@@ -180,3 +180,84 @@ balRL v l (Node rv (Node rlv rll rlr _ ) rr _)
   = mkNode rlv (mkNode v l rll) (mkNode rv rlr rr)
 
 --
+
+{-@ insert :: a -> s:AVL a -> {t:AVL a | eqOrUp s t} @-}
+insert y Leaf = singleton y
+insert y t@(Node x _ _ _)
+  | y < x     = insL y t
+  | y > x     = insR y t
+  | otherwise = t
+
+{-@ inline eqOrUp @-}
+eqOrUp s t = d == 0 || d == 1
+  where
+    d      = diff t s
+
+{-@ insL :: x:a
+         -> t:{AVL a | x < key t && 0 < realHeight t}
+         -> {v: AVL a | eqOrUp t v}
+  @-}
+insL a (Node v l r _)
+  | isLeftBig && leftHeavy l'  = balLL  v l' r
+  | isLeftBig && rightHeavy l' = balLR  v l' r
+  | isLeftBig                  = balL0  v l' r
+  | otherwise                  = mkNode v l' r
+  where
+    isLeftBig                  = leftBig l' r
+    l'                         = insert a l
+
+-- Exercise 12.6
+
+{-@ insR :: x:a
+         -> t:{AVL a  | key t < x && 0 < realHeight t }
+         -> {v: AVL a | eqOrUp t v}
+  @-}
+insR a (Node v l r _)
+  | isRightBig && leftHeavy r'  = balRL  v l r'
+  | isRightBig && rightHeavy r' = balRR  v l r'
+  | isRightBig                  = balR0  v l r'
+  | otherwise                   = mkNode v l r'
+  where
+    isRightBig                  = rightBig l r'
+    r'                          = insert a r  
+
+--
+
+{-@ bal :: x:a
+        -> l:AVLL a x
+        -> r:{AVLR a x | isBal l r 2}
+        -> {t:AVL a | reBal l r t}
+  @-}
+bal v l r
+  | isLeftBig  && leftHeavy l  = balLL  v l r
+  | isLeftBig  && rightHeavy l = balLR  v l r
+  | isLeftBig                  = balL0  v l r
+  | isRightBig && leftHeavy r  = balRL  v l r
+  | isRightBig && rightHeavy r = balRR  v l r
+  | isRightBig                 = balR0  v l r
+  | otherwise                  = mkNode v l r
+  where
+    isLeftBig                  = leftBig  l r
+    isRightBig                 = rightBig l r
+
+{-@ inline reBal @-}
+reBal l r t = bigHt l r t && balHt l r t
+
+{-@ inline balHt @-}
+balHt l r t = not (isBal l r 1) || isReal (realHeight t) l r
+
+{-@ inline bigHt @-}
+bigHt l r t = lBig && rBig
+  where
+    lBig    = not (hl >= hr) || (eqOrUp l t)
+    rBig    = (hl >= hr)     || (eqOrUp r t)
+    hl      = realHeight l
+    hr      = realHeight r
+
+{-@ insert' :: a -> s:AVL a -> {t: AVL a | eqOrUp s t} @-}
+insert' a t@(Node v l r n)
+  | a < v      = bal v (insert' a l) r
+  | a > v      = bal v l (insert' a r)
+  | otherwise  = t
+insert' a Leaf = singleton a
+
