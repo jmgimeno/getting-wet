@@ -8,6 +8,9 @@ import Prelude hiding (max)
 
 --
 
+{-@ die :: {v:_ | false} -> a @-}
+die x = error x
+
 {-@ invariant {v:AVL a | 0 <= realHeight v && realHeight v = getHeight v} @-}
 
 {-@ inv_proof  :: t:AVL a -> {v:_ | 0 <= realHeight t && realHeight t = getHeight t } @-}
@@ -255,9 +258,41 @@ bigHt l r t = lBig && rBig
     hr      = realHeight r
 
 {-@ insert' :: a -> s:AVL a -> {t: AVL a | eqOrUp s t} @-}
-insert' a t@(Node v l r n)
+insert' a t@(Node v l r _)
   | a < v      = bal v (insert' a l) r
   | a > v      = bal v l (insert' a r)
   | otherwise  = t
 insert' a Leaf = singleton a
 
+--
+
+{-@ ignore delete @-}
+{-@ delete :: a -> s:AVL a -> {t:AVL a | eqOrDn s t} @-}
+delete y (Node x l r _)
+  | y < x     = bal x (delete y l) r
+  | x < y     = bal x l (delete y r)
+  | otherwise = merge x l r
+delete _ Leaf = Leaf
+
+{-@ inline eqOrDn @-}
+eqOrDn s t = eqOrUp t s
+
+{-@ ignore merge @-}
+{-@ merge :: x:a 
+          -> l:AVLL a x 
+          -> r:{AVLR a x | isBal l r 1} 
+          -> {t:AVL a | bigHt l r t} 
+  @-}
+merge :: a -> AVL a -> AVL a -> AVL a
+merge _ Leaf r = r
+merge _ l Leaf = l
+merge x l r = bal y l r'
+  where
+    (y, r') = getMin r
+
+{-@ ignore getMin @-}
+--{-@ getMin :: s:{AVL a | realHeight s > 0} -> (x:a, {t:AVLR a | eqOrDn s t}) @-}
+getMin (Node x Leaf r _) = (x, r)
+getMin (Node x l    r _) = (x', bal x l' r)
+  where
+    (x', l') = getMin l
