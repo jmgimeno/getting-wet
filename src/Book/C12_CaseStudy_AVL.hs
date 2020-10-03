@@ -75,20 +75,24 @@ isBal l r n = 0 - n <= d && d <= n
 -- | Trees of height equal to that of another T
 {-@ type AVLT a T = AVLN a {realHeight T} @-}
 
-{-@ empty :: AVLN a 0 @-}
+{-@ empty :: {t:AVLN a 0 | (elems t) == S.empty} @-}
 empty = Leaf
 
 -- Exercise 12.1
 
-{-@ singleton :: a -> AVLN a 1 @-}
+{-@ singleton :: x:a -> t:{AVLN a 1 | elemSing x t} @-}
 singleton x = Node x empty empty 1
+
+{-@ inline elemSing @-}
+elemSing :: (Ord a) => a -> AVL a -> Bool
+elemSing x t = (elems t) == (S.singleton x)
 
 -- Exercise 12.2
 
 {-@ mkNode :: k:a 
            -> l:AVLL a k 
            -> r:{AVLR a k | isBal l r 1}
-           -> AVLN a {nodeHeight l r}
+           -> t:{AVLN a {nodeHeight l r} | balElem k l r t}
   @-}
 mkNode v l r = Node v l r h
  where
@@ -135,21 +139,21 @@ noHeavy t = balFac t == 0
 {-@ balL0 :: x:a
           -> l:{AVLL a x | noHeavy l}
           -> r:{AVLR a x | leftBig l r}
-          -> AVLN a {realHeight l + 1}
+          -> t:{AVLN a {realHeight l + 1} | balElem x l r t}
   @-}
 balL0 v (Node lv ll lr _) r = mkNode lv ll (mkNode v lr r)
 
 {-@ balLL :: x:a
           -> l:{AVLL a x | leftHeavy l}
           -> r:{AVLR a x | leftBig l r}
-          -> AVLT a l
+          -> t:{AVLT a l | balElem x l r t}
   @-}
 balLL v (Node lv ll lr _) r = mkNode lv ll (mkNode v lr r)
 
 {-@ balLR :: x:a
           -> l:{AVLL a x | rightHeavy l}
           -> r:{AVLR a x | leftBig l r}
-          -> AVLT a l
+          -> t:{AVLT a l | balElem x l r t}
   @-}
 balLR v (Node lv ll (Node lrv lrl lrr _) _) r 
   = mkNode lrv (mkNode lv ll lrl) (mkNode v lrr r)
@@ -157,27 +161,27 @@ balLR v (Node lv ll (Node lrv lrl lrr _) _) r
 -- Exercise 12.4
 
 {-@ balR0 :: x:a
-          -> l: AVLL a x
-          -> r: {AVLR a x | rightBig l r && noHeavy r}
-          -> AVLN a {realHeight r + 1}
+          -> l:AVLL a x
+          -> r:{AVLR a x | rightBig l r && noHeavy r}
+          -> t:{AVLN a {realHeight r + 1} | balElem x l r t}
   @-}
 balR0 v l (Node rv rl rr _) = mkNode rv (mkNode v l rl) rr
 
 -- Exercise 12.5
 
 {-@ balRR :: x:a
-          -> l: AVLL a x
+          -> l:AVLL a x
           -> r:{AVLR a x | rightBig l r && rightHeavy r}
-          -> AVLT a r
+          -> t:{AVLT a r | balElem x l r t}
   @-}
 balRR v l (Node rv rl rr _) = mkNode rv (mkNode v l rl) rr
 
 -- Exercise 12.6
 
 {-@ balRL :: x:a
-          -> l: AVLL a x
+          -> l:AVLL a x
           -> r:{AVLR a x | rightBig l r && leftHeavy r}
-          -> AVLT a r
+          -> t:{AVLT a r | balElem x l r t}
   @-}
 balRL v l (Node rv (Node rlv rll rlr _ ) rr _) 
   = mkNode rlv (mkNode v l rll) (mkNode rv rlr rr)
@@ -229,7 +233,7 @@ insR a (Node v l r _)
 {-@ bal :: x:a
         -> l:AVLL a x
         -> r:{AVLR a x | isBal l r 2}
-        -> {t:AVL a | reBal l r t}
+        -> {t:AVL a | reBal l r t && balElem x l r t}
   @-}
 bal v l r
   | isLeftBig  && leftHeavy l  = balLL  v l r
@@ -257,7 +261,11 @@ bigHt l r t = lBig && rBig
     hl      = realHeight l
     hr      = realHeight r
 
-{-@ insert' :: a -> s:AVL a -> {t: AVL a | eqOrUp s t} @-}
+{-@ inline balElem @-}
+balElem :: (Ord a) => a -> AVL a -> AVL a -> AVL a -> Bool
+balElem x l r t = (elems t) == (S.singleton x) `S.union` (elems l) `S.union` (elems r)
+
+{-@ insert' :: x:a -> s:AVL a -> {t: AVL a | eqOrUp s t && addElem x s t} @-}
 insert' a t@(Node v l r _)
   | a < v      = bal v (insert' a l) r
   | a > v      = bal v l (insert' a r)
@@ -339,5 +347,14 @@ lemma_nonMem x (Node _ l r _) = lemma_nonMem x l && lemma_nonMem x r
 
 assert _ x = x
 
---
+-- Exercise 12.8
+
+{-@ insertAPI :: (Ord a) => x:a -> s:AVL a -> {t:AVL a | addElem x s t} @-}
+insertAPI x s = insert' x s
+
+{-@ inline addElem @-}
+addElem :: (Ord a) => a -> AVL a -> AVL a -> Bool
+addElem x s t = (elems t) == (S.singleton x) `S.union` (elems s) 
+
+
 
